@@ -28,8 +28,8 @@ This is in the range of full-speed camera acquisition
 of Hamamatsu Orca Flash4, e.g. 840 MB/s (2048x2048 px at 100 Hz).
 
  ## Acknowledgements
- This code was inspired by [Talley Lambert's](https://github.com/tlambert03/imarispy) code 
- with further modification from Adam Glaser, [VolkerH](https://github.com/VolkerH), Doug Shepherd and 
+ This code was written by [Nikita Vladimirov](https://github.com/nvladimus) with modification by Adam Glaser. Inspired by [Talley Lambert's](https://github.com/tlambert03/imarispy) code 
+ with further input from [VolkerH](https://github.com/VolkerH), Doug Shepherd and 
  [Peter H](https://github.com/abred).
  
  ## Citation
