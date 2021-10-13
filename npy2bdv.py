@@ -9,6 +9,7 @@ from xml.etree import ElementTree as ET
 import skimage.transform
 import shutil
 import z5py
+# import zarr
 
 class BdvWriter():
 
@@ -113,12 +114,12 @@ class BdvWriter():
         self.setup_id_present = [[False] * self.nsetups]
 
     def append_planes(self, planes, pyramid_method = 'decimate', time=0, illumination=0, channel=0, tile=0, angle=0):
-        """Append a plane to a virtual stack.
+        """Append planes to a virtual stack.
 
         Parameters:
         -----------
-            plane: array_like
-                A 2d numpy array of (y,x) pixel values.       
+            planes: array_like
+                A 3d numpy array of (z,y,x) pixel values.       
             pyramid_method: string
                 Downsampling method (mean or decimate)
             time: int
@@ -255,7 +256,7 @@ class BdvWriter():
 
     def write_settings(self):
         """
-        Write XML settings file.
+        Write BDV XML visualization settings file.
 
         """
         root = ET.Element('Settings')
@@ -336,8 +337,7 @@ class BdvWriter():
 
     def write_xml(self, ntimes=1):
         """
-        Write XML header file for the HDF5 file.
-        The camera-related view attributes will be written only if `camera_name` is not None.
+        Write BDV XML header file for the HDF5 or N5 file.
 
         Parameters:
         -----------
@@ -525,7 +525,7 @@ class BdvWriter():
         
         Parameters:
         -----------
-            stack, numpy 3d array (z,y,x) of int16
+            stack, numpy 3d array (z,y,x)
             subsamp_level, array-like with 3 elements, eg (2,4,4) for downsampling z(x2), x and y (x4).
             pyramid_method, string ('mean', 'decimate')
             
