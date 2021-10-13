@@ -1,6 +1,7 @@
-# Fast writing of numpy arrays to HDF5 format compatible with Fiji/BigDataViewer and BigStitcher
-# Author: Nikita Vladimirov
+# Fast writing of numpy arrays to HDF5 and N5 format compatible with Fiji/BigDataViewer and BigStitcher
+# Authors: Nikita Vladimirov and Adam Glaser
 # License: GPL-3.0
+
 import os
 import h5py
 import numpy as np
@@ -17,6 +18,7 @@ class BdvWriter():
                  compression=None,
                  nilluminations=1, nchannels=1, ntiles=1, nangles=1,
                  overwrite=False):
+
         """Class for writing multiple numpy 3d-arrays into BigDataViewer/BigStitcher compatible dataset.
         Currently implemented formats: H5, N5.
 
@@ -24,6 +26,8 @@ class BdvWriter():
         -----------
             filename: string
                 Name of the N5 or H5 file to create (full path).
+            format: str
+                Data format to use: 'h5' (default), 'n5'.
             subsamp_zyx: tuple of tuples
                 Subsampling levels in (z,y,x) order. Integers >= 1, default value ((1, 1, 1),) for no subsampling.
             blockdim: tuple of tuples
@@ -38,14 +42,12 @@ class BdvWriter():
                 Number of view attributes, >=1.
             overwrite: boolean
                 If True, overwrite existing file. Default False.
-            format: str
-                Data format to use: 'h5' (default), 'n5'.
 
         .. note::
         ------
         Input stacks and output files are assumed uint16 type.
 
-        The h5 recommended block (chunk) size should be between 10 KB and 1 MB, larger for large arrays.
+        The recommended block (chunk) size should be between 10 KB and 1 MB, larger for large arrays.
         For example, block dimensions (4,256,256)px gives ~0.5MB block size for type int16 (2 bytes) and writes very fast.
         Block size can be larger than stack dimension.
         """
@@ -111,9 +113,7 @@ class BdvWriter():
         self.setup_id_present = [[False] * self.nsetups]
 
     def append_planes(self, planes, pyramid_method = 'decimate', time=0, illumination=0, channel=0, tile=0, angle=0):
-        """Append a plane to a virtual stack. Requires stack initialization by calling e.g.
-        `append_view(stack=None, virtual_stack_dim=(1000,2048,2048))` beforehand.
-        Todo: implement for N5.
+        """Append a plane to a virtual stack.
 
         Parameters:
         -----------
@@ -127,9 +127,7 @@ class BdvWriter():
             channel: int
             tile: int
             angle: int
-                Indices of the view attributes, >=0.
-            start_index: int
-                z-position of first plane in stack   
+                Indices of the view attributes, >=0. 
         """
 
         isetup = self._determine_setup_id(illumination, channel, tile, angle)
@@ -143,20 +141,12 @@ class BdvWriter():
             if self.file_format == 'h5':
                 group_name = self._fmt.format(time, isetup, ilevel)
                 dataset = self.file_object[group_name]["cells"]
-
-                dataset[self.start_index[ilevel]:self.start_index[ilevel] + substack.shape[0]] = substack
-
-                # dataset.resize((dataset.shape[0]+substack.shape[0], substack.shape[1], substack.shape[2]))
-                # if ilevel == 0:
-                #     self.stack_shapes[isetup] = dataset.shape
-                # dataset[dataset.shape[0]-substack.shape[0]:dataset.shape[0]] = substack
-
             elif self.file_format == 'n5':
-                dataset = self.file_object[f"setup{isetup}/timepoint{time}/s{ilevel}"]
-                # dataset[start_index[ilevel], self.subsamp_zyx[ilevel][0]:self._subsample_index(start_index, self.subsamp_zyx[ilevel][0])+substack.shape[0]] = substack
-                dataset[self.start_index[ilevel]:self.start_index[ilevel] + substack.shape[0]] = substack          
+                dataset = self.file_object[f"setup{isetup}/timepoint{time}/s{ilevel}"]       
             else:
                 raise ValueError("File format unknown")
+
+            dataset[self.start_index[ilevel]:self.start_index[ilevel] + substack.shape[0]] = substack 
 
             self.start_index[ilevel] = self.start_index[ilevel] + substack.shape[0]
 
@@ -595,7 +585,6 @@ class BdvWriter():
         if index == 0:
             index_sub = index
         else:
-            # index_sub = np.floor((index + 1)/subsamp_level) - 1
             index_sub = round(index/subsamp_level)-1
         return int(index_sub)
 

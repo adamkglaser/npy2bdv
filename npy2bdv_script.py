@@ -20,11 +20,12 @@ nilluminations = 1 # number of illumination directions
 ntiles = 16 # number of tiles
 nangles = 1 # number of collection angles
 
-downsample_raw = (1,4,4) # int, downsample raw data factors xyz
+downsample_raw = (1,4,4) # int, downsample raw data factors zyx
 nthreads = 8 # number of threads to use for N5 I/O
 
 subsamp = ((1, 1, 1), (2, 2, 2), (4, 4, 4),) # pyramind subsampling factors xyz
 blockdim = ((64, 64, 64), (64, 64, 64), (64, 64, 64),) # chunksize xyz
+pyramid_method = 'decimate' # mipmap method (decimate or mean)
 
 sx = pixel_spacing*downsample_raw[2] # effective voxel size in x direction
 sy = pixel_spacing*np.cos(theta*np.pi/180.0)*downsample_raw[1] # effective voxel size in y direction
@@ -40,7 +41,7 @@ shiftx = scale_x*(tile_spacing/sx) # shift tile in x, unit pixels
 shifty = 0
 
 # HARDCODED - GET STACK DIMS FROM FIRST FILE
-iminfo = TiffFile(filepath + '/ex1_MMStack_Pos8.ome.tif')
+iminfo = TiffFile(filepath + '/ex1_MMStack_Pos0.ome.tif')
 stack_dims = (len(iminfo.pages), iminfo.pages[0].shape[0], iminfo.pages[0].shape[1])
 print(stack_dims)
 
@@ -76,13 +77,13 @@ for i_ch in range(nchannels):
                     print(i_block)
 
                     if i_block == 0:
-                        iminfo = TiffFile(filepath + '/ex1_MMStack_Pos' + str(i_tile+7) + '.ome.tif')
+                        iminfo = TiffFile(filepath + '/ex1_MMStack_Pos' + str(i_tile) + '.ome.tif')
                         num_imgs = len(iminfo.pages)
-                        imgs = tifffile.imread(filepath + '/ex1_MMStack_Pos' + str(i_tile+7) + '.ome.tif', key = range(0, num_imgs))
+                        imgs = tifffile.imread(filepath + '/ex1_MMStack_Pos' + str(i_tile) + '.ome.tif', key = range(0, num_imgs))
                     else:
-                        iminfo = TiffFile(filepath + '/ex1_MMStack_Pos' + str(i_tile+7) + '_' + str(i_block) + '.ome.tif')
+                        iminfo = TiffFile(filepath + '/ex1_MMStack_Pos' + str(i_tile) + '_' + str(i_block) + '.ome.tif')
                         num_imgs = len(iminfo.pages)
-                        imgs = tifffile.imread(filepath + '/ex1_MMStack_Pos' + str(i_tile+7) + '_' + str(i_block) + '.ome.tif', key = range(0, num_imgs))                       
+                        imgs = tifffile.imread(filepath + '/ex1_MMStack_Pos' + str(i_tile) + '_' + str(i_block) + '.ome.tif', key = range(0, num_imgs))                       
                     
                     imgs = imgs[::downsample_raw[0],::downsample_raw[1],::downsample_raw[2]]
                     imgs = np.transpose(imgs,(0,2,1))
@@ -92,7 +93,7 @@ for i_ch in range(nchannels):
                                             illumination = i_illum,
                                             tile = i_tile,
                                             angle = i_angle,
-                                            pyramid_method = 'decimate')
+                                            pyramid_method = pyramid_method)
 
 bdv_writer.write_xml()
 bdv_writer.write_settings()
