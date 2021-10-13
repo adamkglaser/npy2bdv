@@ -11,14 +11,14 @@
  * compression methods `None`, `gzip`, `lzf` (`None` by default).
  * downsampling options: 
     - any number of mipmap levels
-    - computed via averaging, compatible with BigDataViewer/BigStitcher convention.
- * user-defined block sizes for H5 storage (default `4,256,256`)
+    - computed via averaging or decimating, compatible with BigDataViewer/BigStitcher convention.
+ * user-defined block sizes for H5 and N5 storage (default `4,256,256`)
  * any number of time points, illuminations, channels, tiles, angles.
  * arbitrary affine transformation for each individual view (e.g. translation, rotation, shear).
  * arbitrary voxel calibration for each view, to account for spatial anisotropy.
  * individual views can differ in dimensions, voxel size, voxel units, exposure time, and exposure units.
  * missing views are labeled in XML automatically.
- * writing virtual stacks of arbitrary size, by plane or sub-stack. Handy when your stack is larger than your RAM.
+ * appending data to stacks of arbitrary size, by plane or sub-stack. Handy when your stack is larger than your RAM or in separate files (e.g., MM TIFF files).
     - virtual stacks can be written with multiple subsampling levels and compression.
  
  ## Writing speed
@@ -29,10 +29,8 @@ of Hamamatsu Orca Flash4, e.g. 840 MB/s (2048x2048 px at 100 Hz).
 
  ## Acknowledgements
  This code was inspired by [Talley Lambert's](https://github.com/tlambert03/imarispy) code 
- and further input from Adam Glaser, [VolkerH](https://github.com/VolkerH), Doug Shepherd and 
+ and further modification from Adam Glaser, [VolkerH](https://github.com/VolkerH), Doug Shepherd and 
  [Peter H](https://github.com/abred).
- 
- To report issues or bugs please use the [issues](https://github.com/nvladimus/npy2bdv/issues) tool.
  
  ## Citation
  If you find this library useful, please cite it. Thanks!
