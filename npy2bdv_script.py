@@ -95,46 +95,46 @@ for i_ch in range(nchannels):
                                             angle = i_angle,
                                             pyramid_method = pyramid_method)
 
-bdv_writer.write_xml()
-bdv_writer.write_settings()
+                bdv_writer.write_xml()
+                bdv_writer.write_settings()
 
-for i_ch in range(nchannels):
-    for i_illum in range(nilluminations):
-        for i_tile in range(ntiles):
-            for i_angle in range(0,nangles):
+                for i_ch2 in range(i_ch+1):
+                    for i_illum2 in range(i_illum+1):
+                        for i_tile2 in range(i_tile+1):
+                            for i_angle2 in range(i_angle+1):
 
-                m_deskew = np.array(([1.0, 0.0, 0.0, 0.0],
-                                     [0.0, 1.0, 0.0, 0.0],
-                                     [0.0, shear, 1.0, 0.0]))
+                                m_deskew = np.array(([1.0, 0.0, 0.0, 0.0],
+                                                     [0.0, 1.0, 0.0, 0.0],
+                                                     [0.0, shear, 1.0, 0.0]))
 
-                m_scale = np.array(([scale_x, 0.0, 0.0, 0.0],
-                                    [0.0, scale_y, 0.0, 0.0],
-                                    [0.0, 0.0, scale_z, 0.0]))
+                                m_scale = np.array(([scale_x, 0.0, 0.0, 0.0],
+                                                    [0.0, scale_y, 0.0, 0.0],
+                                                    [0.0, 0.0, scale_z, 0.0]))
 
-                m_overlap = np.array(([1.0, 0.0, 0.0, i_tile*shiftx],
-                                      [0.0, 1.0, 0.0, shifty],
-                                      [0.0, 0.0, 1.0, 0.0]))
+                                m_overlap = np.array(([1.0, 0.0, 0.0, i_tile2*shiftx],
+                                                      [0.0, 1.0, 0.0, shifty],
+                                                      [0.0, 0.0, 1.0, 0.0]))
 
-                bdv_writer.append_affine(m_affine = m_deskew,
-                                        name_affine = 'deskew',
-                                        channel=i_ch,
-                                        illumination=i_illum,
-                                        tile=i_tile,
-                                        angle=i_angle)
+                                bdv_writer.append_affine(m_affine = m_deskew,
+                                                        name_affine = 'deskew',
+                                                        channel=i_ch2,
+                                                        illumination=i_illum2,
+                                                        tile=i_tile2,
+                                                        angle=i_angle2)
 
-                bdv_writer.append_affine(m_affine = m_scale,
-                                        name_affine = 'scale',
-                                        channel=i_ch,
-                                        illumination=i_illum,
-                                        tile=i_tile,
-                                        angle=i_angle)
+                                bdv_writer.append_affine(m_affine = m_scale,
+                                                        name_affine = 'scale',
+                                                        channel=i_ch2,
+                                                        illumination=i_illum2,
+                                                        tile=i_tile2,
+                                                        angle=i_angle2)
 
-                bdv_writer.append_affine(m_affine = m_overlap,
-                                        name_affine = 'overlap',
-                                        channel=i_ch,
-                                        illumination=i_illum,
-                                        tile=i_tile,
-                                        angle=i_angle)
+                                bdv_writer.append_affine(m_affine = m_overlap,
+                                                        name_affine = 'overlap',
+                                                        channel=i_ch2,
+                                                        illumination=i_illum2,
+                                                        tile=i_tile2,
+                                                        angle=i_angle2)
 
 bdv_writer.close()
 

@@ -9,7 +9,7 @@ from xml.etree import ElementTree as ET
 import skimage.transform
 import shutil
 import z5py
-# import zarr
+import zarr
 
 class BdvWriter():
 
@@ -94,22 +94,30 @@ class BdvWriter():
                 elif self.file_format == 'n5':
                     shutil.rmtree(self.filename + '.' + self.file_format)
                     print("Warning: N5 dataset already exists, overwriting.")
+                elif self.file_format == 'zarr':
+                    shutil.rmtree(self.filename + '.' + self.file_format)
+                    print("Warning: zarr dataset already exists, overwriting.")
             else:
                 raise FileExistsError(f"File {self.filename + '.' + self.file_format} already exists.")
         if self.file_format == 'h5':
-            self.file_object = h5py.File(self.filename + '.' + self.file_format, 'a')
+            # self.file_object = h5py.File(self.filename + '.' + self.file_format, 'w')
+            self.file_object = h5py.File(self.filename + '.' + self.file_format, 'w', libver=('latest', 'v110'))
+            self.file_object.swmr_mode = True
             assert compression in (None, 'gzip', 'lzf'), f'H5 compression unknown: {compression}'
             self.compression = compression
             self._write_H5_headers()
         elif self.file_format == 'n5':
             self.file_object = z5py.File(self.filename + '.' + self.file_format, 'a')
-            # self.file_object = zarr.N5Store(filename[:-2] + 'n5')
-            # self.file_object = zarr.DirectoryStore(filename[:-2] + 'n5')
             assert compression in (None, 'gzip', 'xz'), \
                 f'N5 compression unknown: {compression}'
             self.compression = 'raw' if compression is None else compression
+        elif self.file_format == 'zarr':
+            self.file_object = zarr.DirectoryStore(filename + '.' + 'zarr')
+            assert compression in (None, 'gzip', 'xz'), \
+                f'N5 compression unknown: {compression}'
         else:
             raise ValueError("File format unknown")
+
         self.virtual_stacks = False
         self.setup_id_present = [[False] * self.nsetups]
 
@@ -144,6 +152,8 @@ class BdvWriter():
                 dataset = self.file_object[group_name]["cells"]
             elif self.file_format == 'n5':
                 dataset = self.file_object[f"setup{isetup}/timepoint{time}/s{ilevel}"]       
+            elif self.file_format == 'zarr':
+                dataset = zarr.open_group(store = self.file_object, path = f"setup{isetup}/timepoint{time}")[f"s{ilevel}"]
             else:
                 raise ValueError("File format unknown")
 
@@ -209,8 +219,10 @@ class BdvWriter():
 
         if self.file_format == 'h5':
             self._initialize_h5_dataset(stack_dim, isetup, time)
-        else:
+        elif self.file_format == 'n5':
             self._initialize_n5_dataset(stack_dim, isetup, time, n_threads)
+        else:
+            self._initialize_zarr_dataset(stack_dim, isetup, time)
 
     def _initialize_h5_dataset(self, stack_dim, isetup, time, dtype='int16'):
         """Initialize the view (stack) as H5 dataset in BigDataViewer format.
@@ -239,20 +251,21 @@ class BdvWriter():
                 self.file_object[f"setup{isetup}/timepoint{time}/s{ilevel}"].attrs['downsamplingFactors'] = \
                     np.flip(self.subsamp_zyx[ilevel]).tolist()
 
+    def _initialize_zarr_dataset(self, stack_dim, isetup, time, dtype='uint16'):
         """Initialize the view (stack) as N5 dataset in BigDataViewer format using zarr"""
-        # setup_grp = zarr.group(store = self.file_object, path = f"setup{isetup}")
-        # time_grp = setup_grp.create_group(name = f"timepoint{time}")
-        # setup_grp.attrs['downsamplingFactors'] = np.flip(self.subsamp_zyx, 1).tolist()
-        # # setup_grp.attrs['dataType'] = "dtype"
-        # time_grp.attrs["resolution"] = list(self.voxel_size_xyz[isetup])
-        # time_grp.attrs["saved_completely"] = True
-        # time_grp.attrs["multiScale"] = True
-        # if stack_dim is not None:
-        #     for ilevel in range(self.nlevels):
-        #         dset = time_grp.create_dataset(f"s{ilevel}", chunks=self.chunks[ilevel], shape = np.asarray(stack_dim) // self.subsamp_zyx[ilevel],
-        #                            compression=self.compression, dtype=dtype)
-        #         dset.attrs['downsamplingFactors'] = \
-        #             np.flip(self.subsamp_zyx[ilevel]).tolist()
+        setup_grp = zarr.group(store = self.file_object, path = f"setup{isetup}")
+        time_grp = setup_grp.create_group(name = f"timepoint{time}")
+        setup_grp.attrs['downsamplingFactors'] = np.flip(self.subsamp_zyx, 1).tolist()
+        # setup_grp.attrs['dataType'] = "dtype"
+        time_grp.attrs["resolution"] = list(self.voxel_size_xyz[isetup])
+        time_grp.attrs["saved_completely"] = True
+        time_grp.attrs["multiScale"] = True
+        if stack_dim is not None:
+            for ilevel in range(self.nlevels):
+                dset = time_grp.create_dataset(f"s{ilevel}", chunks=self.chunks[ilevel], shape = np.asarray(stack_dim) // self.subsamp_zyx[ilevel],
+                                   compression=self.compression, dtype=dtype)
+                dset.attrs['downsamplingFactors'] = \
+                    np.flip(self.subsamp_zyx[ilevel]).tolist()
 
     def write_settings(self):
         """
@@ -639,8 +652,5 @@ class BdvWriter():
     def _get_xml_root(self):
         """Load the meta-information information from XML header file"""
         assert os.path.exists(self.filename_xml), f"Error: {self.filename_xml} file not found"
-        if self._root is None:
-            with open(self.filename_xml, 'r') as file:
-                self._root = ET.parse(file).getroot()
-        else:
-            pass
+        with open(self.filename_xml, 'r') as file:
+            self._root = ET.parse(file).getroot()
